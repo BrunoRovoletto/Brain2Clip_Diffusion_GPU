@@ -18,7 +18,7 @@ from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
 from ldm.util import instantiate_from_config
 
-root = r"/workspace/project"
+root = r"/workspace/Brain2Clip_Diffusion_GPU"
 
 
 def load_model_from_config(config, ckpt, device, verbose=False):
@@ -63,6 +63,9 @@ def sample_model(input_im, model, sampler, precision, h, w, ddim_steps, n_sample
     with precision_scope("cuda"):
         with model.ema_scope():
             c = model.get_learned_conditioning(input_im).tile(n_samples,1,1)
+            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            print(c.shape)
+            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
             if scale != 1.0:
                 uc = torch.zeros_like(c)
@@ -84,8 +87,8 @@ def sample_model(input_im, model, sampler, precision, h, w, ddim_steps, n_sample
             return torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
 def main(
-    im_path="data/example_conditioning/superresolution/sample_0.jpg",
-    ckpt="models/ldm/stable-diffusion-v1/sd-clip-vit-l14-img-embed_ema_only.ckpt",
+    im_path="workspace/Brain2Clip_Diffusion_GPU/data/example_conditioning/superresolution/sample_0.jpg",
+    ckpt="/workspace/datasets/Models/sd-clip-vit-l14-img-embed_ema_only.ckpt",
     config="configs/stable-diffusion/sd-image-condition-finetune.yaml",
     outpath="im_variations",
     scale=3.0,
@@ -98,7 +101,7 @@ def main(
     ddim_eta=0.0,
     device_idx=0,
     save=True,
-    eval=True,
+    eval=False,
     ):
 
     device = f"cuda:{device_idx}"
@@ -121,11 +124,15 @@ def main(
     if isinstance(im_path, str):
         im_paths = glob.glob(im_path)
     im_paths = sorted(im_paths)
+    print(im_paths)
+    im_paths.append("/workspace/Brain2Clip_Diffusion_GPU/data/example_conditioning/superresolution/sample_0.jpg")
 
     all_similarities = []
 
     for im in im_paths:
+        print("BBBBBBBBBBBBBBBBBBBBB")
         input_im = load_im(im).to(device)
+        print(input_im.shape)
 
         x_samples_ddim = sample_model(input_im, model, sampler, precision, h, w, ddim_steps, n_samples, scale, ddim_eta)
         if save:
@@ -147,7 +154,8 @@ def main(
 
     df = pd.DataFrame(zip(im_paths, [x.item() for x in all_similarities]), columns=["filename", "similarity"])
     df.to_csv(os.path.join(sample_path, "eval.csv"))
-    print(torch.cat(all_similarities).mean())
+   # print(torch.cat(all_similarities).mean())
 
 if __name__ == "__main__":
-    fire.Fire(main)
+   # fire.Fire(main)
+   main()
